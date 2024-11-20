@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { loginAction } from "@/actions/auth";
+import CustomButton from "@/components/CustomButton";
 import {
   Card,
   CardContent,
@@ -8,8 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -19,10 +18,21 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { TLoginSchema, LoginSchema } from "@repo/zod-schemas";
-import CustomButton from "@/components/CustomButton";
+import { handleError } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { LoginSchema, TLoginSchema } from "@repo/shared-types";
+import { useMutation } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export default function LoginForm() {
+  const router = useRouter();
+  const mutation = useMutation({
+    mutationFn: loginAction,
+  });
   const form = useForm<TLoginSchema>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
@@ -30,12 +40,21 @@ export default function LoginForm() {
       password: "",
     },
   });
+  const [isPending, startTransition] = useTransition();
 
   // 2. Define a submit handler.
   function onSubmit(values: TLoginSchema) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
+    startTransition(() =>
+      mutation.mutate(values, {
+        onSuccess: async (data) => {
+          if (!data.success) return toast.error(data.error);
+          toast.success("Successfully Logged In");
+          form.reset();
+          router.push("/dashboard");
+        },
+        onError: (error) => handleError(error),
+      })
+    );
   }
 
   return (
@@ -75,7 +94,11 @@ export default function LoginForm() {
                 </FormItem>
               )}
             />
-            <CustomButton type="submit" className="w-full !mt-8">
+            <CustomButton
+              type="submit"
+              loading={isPending}
+              className="w-full !mt-8"
+            >
               Submit
             </CustomButton>
           </form>

@@ -6,3 +6,7 @@ export type TRegisterFormState = {
   };
   message?: string;
 };
+
+export type ActionResponse =
+  | { success: true; data: unknown }
+  | { success: false; error: string };

@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { CreateUserDto } from './dto.js';
+import { PrismaService } from '@/prisma/prisma.service';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { getUserDataSelect, TGetUserDataSelect } from '@repo/shared-types';
 import { hash } from 'argon2';
-import { getUserDataSelect } from '@repo/zod-schemas/prisma-types';
+import { CreateUserDto } from './dto';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -17,9 +18,34 @@ export class UserService {
     });
   }
 
-  async findByEmail(email: string) {
-    return await this.prisma.user.findUnique({
-      where: { email },
+  async findAll() {
+    return await this.prisma.user.findMany({
+      select: getUserDataSelect(),
     });
+  }
+
+  async findBy(type: 'id' | 'email', value: any, withPassword?: boolean) {
+    let user: TGetUserDataSelect | null = null;
+    switch (type) {
+      case 'id': {
+        user = await this.prisma.user.findUnique({
+          where: { id: value },
+          select: getUserDataSelect(undefined, withPassword),
+        });
+        break;
+      }
+      case 'email': {
+        user = await this.prisma.user.findUnique({
+          where: { email: value },
+          select: getUserDataSelect(undefined, withPassword),
+        });
+        break;
+      }
+      default: {
+        user = null;
+      }
+    }
+
+    return user;
   }
 }

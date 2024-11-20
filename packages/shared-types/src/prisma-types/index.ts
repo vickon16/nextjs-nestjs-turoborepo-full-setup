@@ -1,11 +1,16 @@
 import { Prisma } from "@prisma/client";
 
-export function getUserDataSelect() {
+export function getUserDataSelect(
+  loggedInUserId?: string,
+  withPassword?: boolean
+) {
   return {
     id: true,
     name: true,
+    email: true,
     role: true,
     createdAt: true,
+    ...(withPassword && { password: true }),
   } satisfies Prisma.UserSelect;
 }
 

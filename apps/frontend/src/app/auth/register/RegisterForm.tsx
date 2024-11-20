@@ -19,21 +19,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { TRegisterSchema, RegisterSchema } from "@repo/zod-schemas";
+import { TRegisterSchema, RegisterSchema } from "@repo/shared-types";
 import CustomButton from "@/components/CustomButton";
 import { useMutation } from "@tanstack/react-query";
-import kyInstance from "@/lib/ky";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { TGetUserDataSelect } from "@repo/zod-schemas/prisma-types";
+import { handleError } from "@/lib/utils";
+import { registerAction } from "@/actions/auth";
+import { useTransition } from "react";
 
 export default function RegisterForm() {
   const router = useRouter();
   const mutation = useMutation({
-    mutationFn: async (data: TRegisterSchema) =>
-      await kyInstance
-        .post("auth/register", { json: data })
-        .json<TGetUserDataSelect>(),
+    mutationFn: registerAction,
   });
   const form = useForm<TRegisterSchema>({
     resolver: zodResolver(RegisterSchema),
@@ -43,22 +41,21 @@ export default function RegisterForm() {
       password: "",
     },
   });
+  const [isPending, startTransition] = useTransition();
 
   // 2. Define a submit handler.
   async function onSubmit(values: TRegisterSchema) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
-    await mutation.mutateAsync(values, {
-      onSuccess: (data) => {
-        router.push("/");
-        console.log(data);
-      },
-      onError: (error) => {
-        toast.error(error.message || "Something went wrong");
-        console.log(error);
-      },
-    });
+    startTransition(() =>
+      mutation.mutate(values, {
+        onSuccess: (data) => {
+          if (!data.success) return toast.error(data.error);
+          toast.success("User created successfully");
+          form.reset();
+          router.push("/dashboard");
+        },
+        onError: (error) => handleError(error),
+      })
+    );
   }
 
   return (
@@ -113,7 +110,7 @@ export default function RegisterForm() {
             />
             <CustomButton
               type="submit"
-              loading={form.formState.isSubmitting}
+              loading={isPending}
               className="w-full !mt-8"
             >
               Submit

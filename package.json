@@ -19,6 +19,11 @@
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
+    "jose": "^5.9.6",
     "zod": "^3.23.8"
+  },
+  "overrides": {
+    "react": "19.0.0-rc-66855b96-20241106",
+    "eslint": "9.15.0"
   }
 }

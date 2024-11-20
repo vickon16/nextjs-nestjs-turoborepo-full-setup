@@ -1,5 +1,5 @@
 import { IsEmail, IsString, MinLength } from 'class-validator';
-import { type TRegisterSchema } from '@repo/zod-schemas';
+import { type TRegisterSchema } from '@repo/shared-types';
 
 export class CreateUserDto implements TRegisterSchema {
   @IsString()
