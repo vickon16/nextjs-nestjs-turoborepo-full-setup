@@ -13,4 +13,7 @@ export class CreateUserDto implements TRegisterSchema {
   @IsString()
   @MinLength(8)
   password: string;
+
+  @IsString()
+  googleId?: string;
 }

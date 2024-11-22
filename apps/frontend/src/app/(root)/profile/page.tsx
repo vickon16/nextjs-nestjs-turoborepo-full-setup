@@ -1,5 +1,5 @@
+import { NavUser } from "@/components/shadcn-extras/nav-user";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,13 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { NavUser } from "@/components/shadcn-extras/nav-user";
-import { getCurrentUser } from "@/lib/session";
+import { Settings } from "lucide-react";
 
 const ProfilePage = async () => {
-  const user = await getCurrentUser();
-  console.log({ user: user?.user.name });
-
   return (
     <main className="min-h-full p-4">
       <div className="mb-4 flex items-center justify-between space-y-2">

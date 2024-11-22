@@ -2,6 +2,7 @@
 
 import { loginAction } from "@/actions/auth";
 import CustomButton from "@/components/CustomButton";
+import GoogleButton from "@/components/GoogleButton";
 import {
   Card,
   CardContent,
@@ -103,6 +104,13 @@ export default function LoginForm() {
             </CustomButton>
           </form>
         </Form>
+
+        <div className="my-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <span className="w-full h-[2px] bg-muted" />
+          <span className="text-muted-foreground text-sm">OR</span>
+          <span className="w-full h-[2px] bg-muted" />
+        </div>
+        <GoogleButton />
         <div className="mt-4 text-center text-sm">
           Don&apos; have an account?{" "}
           <Link href="/auth/register" className="underline">

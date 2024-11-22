@@ -1,19 +1,22 @@
 import { PrismaService } from '@/prisma/prisma.service';
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { getUserDataSelect, TGetUserDataSelect } from '@repo/shared-types';
 import { hash } from 'argon2';
 import { CreateUserDto } from './dto';
-import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateUserDto) {
-    const { password, ...rest } = dto;
+    const { password, googleId, ...rest } = dto;
     const hashedPassword = await hash(password);
     return await this.prisma.user.create({
-      data: { ...rest, password: hashedPassword },
+      data: {
+        ...rest,
+        password: hashedPassword,
+        ...(googleId && { googleId }),
+      },
       select: getUserDataSelect(),
     });
   }

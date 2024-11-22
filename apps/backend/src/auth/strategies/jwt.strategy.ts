@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import jwtConfig from '../jwt.config';
+import jwtConfig from '../config/jwt.config';
 import { type ConfigType } from '@nestjs/config';
 import { TAuthJWTPayload } from '@/lib/types';
 import { AuthService } from '../auth.service';
+import { Session } from '@repo/shared-types';
 
 @Injectable()
 export class JWTStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -14,9 +15,16 @@ export class JWTStrategy extends PassportStrategy(Strategy, 'jwt') {
     private readonly authService: AuthService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: jwtConfiguration.secret,
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req) => {
+          const authorization = req?.headers?.['x-app-session'];
+          if (!authorization) return null;
+          const session = JSON.parse(authorization) as Session;
+          return session.accessToken;
+        },
+      ]),
       ignoreExpiration: false,
+      secretOrKey: jwtConfiguration.secret,
     });
   }
 

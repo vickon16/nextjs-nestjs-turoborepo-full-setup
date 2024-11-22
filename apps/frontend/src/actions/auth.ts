@@ -40,12 +40,19 @@ export async function loginAction(
   }
 }
 
+export async function googleLoginAction() {
+  try {
+    const data = await kyy("auth/google/login").json<Session>();
+    console.log({ data });
+    return { success: true, data };
+  } catch (error) {
+    const message = await handleError(error, false);
+    return { success: false, error: message };
+  }
+}
+
 export async function deleteAction() {
   await deleteSession();
   revalidatePath("/");
   redirect("/auth/login");
-}
-
-export async function createSessionAction(session: Session) {
-  return await createSession(session);
 }

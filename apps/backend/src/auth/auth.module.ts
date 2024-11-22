@@ -5,16 +5,18 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import jwtConfig from './jwt.config';
+import jwtConfig from './config/jwt.config';
 import refreshConfig from './refresh.config';
 import { JWTStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
-import { RefreshStrategy } from './strategies/refresh.strategy';
+import googleOauthConfig from './config/google.oauth.config';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   imports: [
     ConfigModule.forFeature(jwtConfig),
     ConfigModule.forFeature(refreshConfig),
+    ConfigModule.forFeature(googleOauthConfig),
   ],
   controllers: [AuthController],
   providers: [
@@ -24,7 +26,7 @@ import { RefreshStrategy } from './strategies/refresh.strategy';
     JwtService,
     LocalStrategy,
     JWTStrategy,
-    RefreshStrategy,
+    GoogleStrategy,
   ],
   exports: [AuthService],
 })

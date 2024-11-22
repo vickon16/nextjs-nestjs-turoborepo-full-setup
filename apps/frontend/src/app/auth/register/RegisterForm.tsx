@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { handleError } from "@/lib/utils";
 import { registerAction } from "@/actions/auth";
 import { useTransition } from "react";
+import GoogleButton from "@/components/GoogleButton";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -108,6 +109,7 @@ export default function RegisterForm() {
                 </FormItem>
               )}
             />
+
             <CustomButton
               type="submit"
               loading={isPending}
@@ -117,6 +119,14 @@ export default function RegisterForm() {
             </CustomButton>
           </form>
         </Form>
+
+        <div className="my-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <span className="w-full h-[2px] bg-muted" />
+          <span className="text-muted-foreground text-sm">OR</span>
+          <span className="w-full h-[2px] bg-muted" />
+        </div>
+        <GoogleButton />
+
         <div className="mt-4 text-center text-sm">
           Already have an account?{" "}
           <Link href="/auth/login" className="underline">

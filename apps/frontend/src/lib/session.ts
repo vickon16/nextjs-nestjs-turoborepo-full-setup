@@ -5,9 +5,10 @@ import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { kyAuth } from "./ky";
+import { COOKIE_OPTIONS, COOKIES_EXPIRES_AT } from "./constants";
+import { kyyAuth } from "./ky";
 
-const secretKey = process.env.SESSION_SECRET_KEY!;
+const secretKey = process.env.APP_KEY!;
 const encodedKey = new TextEncoder().encode(secretKey);
 
 export const verifyJWTSession = async (session: string) => {
@@ -24,22 +25,14 @@ export const verifyJWTSession = async (session: string) => {
 };
 
 export async function createSession(payload: Session) {
-  const expiredAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
   const session = await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime(expiredAt)
+    .setExpirationTime(COOKIES_EXPIRES_AT)
     .sign(encodedKey);
 
   const cookie = await cookies();
-  cookie.set("session", session, {
-    secure: true,
-    httpOnly: true,
-    expires: expiredAt,
-    sameSite: "lax",
-    path: "/",
-  });
+  cookie.set("session", session, COOKIE_OPTIONS);
 }
 
 export const getSession = async () => {
@@ -62,18 +55,21 @@ export async function deleteSession() {
   cookie.delete("session");
 }
 
-export const getCurrentUser = cache(async () => {
-  const session = await getSession();
-  if (!session || !session.user) return null;
+export const getCurrentUser = cache(
+  async (): Promise<TGetUserDataSelect | null> => {
+    const session = await getSession();
+    if (!session || !session.user) return null;
 
-  console.log({ accessToken: session.accessToken });
+    try {
+      const user = await kyyAuth(session)
+        .get(`users/${session.user.id}`)
+        .json<TGetUserDataSelect>();
+      if (!user) return null;
 
-  try {
-    const user = await kyAuth(session).get(`users/${session.user.id}`).json();
-    if (!user) return null;
-    return { user, session };
-  } catch (error) {
-    console.error("Failed to get current user" + error);
-    return null;
+      return user;
+    } catch (error) {
+      console.error("Failed to get current user" + error);
+      return null;
+    }
   }
-});
+);
