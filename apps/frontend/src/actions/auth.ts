@@ -1,11 +1,10 @@
 "use server";
 
 import { kyy } from "@/lib/ky";
-import { createSession, deleteSession } from "@/lib/session";
+import { createSession, deleteSession, getSession } from "@/lib/session";
 import { ActionResponse } from "@/lib/types";
 import { handleError } from "@/lib/utils";
 import { Session, TLoginSchema, TRegisterSchema } from "@repo/shared-types";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function registerAction(
@@ -52,7 +51,10 @@ export async function googleLoginAction() {
 }
 
 export async function deleteAction() {
+  const session = await getSession();
+  if (!session) redirect("/auth/login");
+
+  await kyy.post(`auth/logout/${session.user.id}`);
   await deleteSession();
-  revalidatePath("/");
   redirect("/auth/login");
 }

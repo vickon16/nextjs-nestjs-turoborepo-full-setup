@@ -7,7 +7,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { verify } from 'argon2';
+import { hash, verify } from 'argon2';
 import { TAuthJWTPayload } from '@/lib/types';
 import { JwtService } from '@nestjs/jwt';
 import refreshConfig from './refresh.config';
@@ -46,6 +46,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
     } satisfies RequestUser;
   }
 
@@ -58,6 +59,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
     } satisfies RequestUser;
   }
 
@@ -70,6 +72,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
     } satisfies RequestUser;
   }
 
@@ -77,10 +80,20 @@ export class AuthService {
     const foundUser = await this.userService.findBy('email', payload.email);
     let user: RequestUser;
     if (!!foundUser) {
-      user = { id: foundUser.id, name: foundUser.name, email: foundUser.email };
+      user = {
+        id: foundUser.id,
+        name: foundUser.name,
+        email: foundUser.email,
+        role: foundUser.role,
+      };
     } else {
       const newUser = await this.userService.create(payload);
-      user = { id: newUser.id, name: newUser.name, email: newUser.email };
+      user = {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+      };
     }
 
     // this object would be added to the request object
@@ -89,7 +102,19 @@ export class AuthService {
 
   async loginUser(user: RequestUser): Promise<Session> {
     const { accessToken, refreshToken } = await this.generateToken(user.id);
+    const hashedRefreshToken = await hash(refreshToken);
+    await this.userService.updateHashedRefreshToken(
+      user.id,
+      hashedRefreshToken,
+    );
     return { user, accessToken, refreshToken } satisfies Session;
+  }
+
+  async logoutUser(userId: number) {
+    const user = await this.userService.findBy('id', userId);
+    if (!user) throw new UnauthorizedException('User not found');
+    await this.userService.updateHashedRefreshToken(userId, null);
+    return null;
   }
 
   async generateToken(userId: number) {
@@ -102,14 +127,25 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  refreshAccessToken(refreshToken: string) {
+  async refreshAccessToken(userId, refreshToken: string) {
+    const user = await this.userService.findBy('id', userId);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const refreshTokenMatched = await verify(
+      user?.hashedRefreshToken,
+      refreshToken,
+    );
+
+    if (!refreshTokenMatched)
+      throw new UnauthorizedException('Invalid refresh token');
+
     try {
-      const payload = this.jwtService.verify(
+      const payload = (await this.jwtService.verifyAsync(
         refreshToken,
         this.refreshConfiguration,
-      ) as TAuthJWTPayload;
+      )) as TAuthJWTPayload;
       if (!payload) return '';
-      const accessToken = this.jwtService.sign(
+      const accessToken = await this.jwtService.signAsync(
         { sub: payload.sub } as TAuthJWTPayload,
         this.jwtConfiguration,
       );

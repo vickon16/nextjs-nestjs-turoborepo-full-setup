@@ -25,6 +25,7 @@ export class JWTStrategy extends PassportStrategy(Strategy, 'jwt') {
       ]),
       ignoreExpiration: false,
       secretOrKey: jwtConfiguration.secret,
+      // passReqToCallback: true,
     });
   }
 

@@ -7,6 +7,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
+import { Public, Roles } from '@/auth/auth.decorators';
+import { RolesAuthGuard } from '@/auth/guards/roles-auth.guard';
 
 @Controller('users')
 export class UserController {
@@ -21,5 +23,13 @@ export class UserController {
   @Get(':id')
   async getUser(@Param('id', ParseIntPipe) id: number) {
     return await this.userService.findBy('id', id);
+  }
+
+  @Roles('ADMIN')
+  @UseGuards(RolesAuthGuard)
+  @UseGuards(JWTAuthGuard)
+  @Get('admin')
+  async getAdminUsers() {
+    return await this.userService.findAll();
   }
 }

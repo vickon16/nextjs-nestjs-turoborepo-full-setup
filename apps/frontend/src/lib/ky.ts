@@ -1,19 +1,21 @@
 import { Session } from "@repo/shared-types";
-import ky from "ky";
+import ky, { KyRequest } from "ky";
 import { BACKEND_URL } from "./constants";
 
 export const kyy = ky.create({
   prefixUrl: `${BACKEND_URL}/`,
 });
 
+export const kyBeforeRequest = (session: Session) => [
+  (request: KyRequest) => {
+    request.headers.set("x-app-session", JSON.stringify(session));
+  },
+];
+
 export const kyyAuth = (session: Session) =>
   kyy.extend({
     hooks: {
-      beforeRequest: [
-        (request) => {
-          request.headers.set("x-app-session", JSON.stringify(session));
-        },
-      ],
+      beforeRequest: kyBeforeRequest(session),
       afterResponse: [
         async (request, options, response) => {
           const requestSession = request.headers.get("x-app-session");
@@ -40,5 +42,5 @@ export const kyyAuth = (session: Session) =>
         },
       ],
     },
-    retry: 2,
+    retry: 0,
   });

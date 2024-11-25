@@ -8,9 +8,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getCurrentUser } from "@/lib/session";
 import { Settings } from "lucide-react";
+import { redirect } from "next/navigation";
 
 const ProfilePage = async () => {
+  const user = await getCurrentUser();
+  if (!user) return redirect("/auth/login");
+  console.log({ user });
+
   return (
     <main className="min-h-full p-4">
       <div className="mb-4 flex items-center justify-between space-y-2">
@@ -30,10 +36,7 @@ const ProfilePage = async () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <NavUser
-              user={{ email: "nkachukwu@gmail.com", name: "Nkachukwu", id: 1 }}
-              col
-            />
+            <NavUser user={user} col />
 
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 text-center">
               <div>

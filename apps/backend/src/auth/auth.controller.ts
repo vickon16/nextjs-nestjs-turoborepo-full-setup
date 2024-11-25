@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseIntPipe,
   Post,
   Req,
   Res,
@@ -13,7 +15,10 @@ import { type Response } from 'express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { JWTAuthGuard } from './guards/jwt-auth.guard';
+import { Public } from './auth.decorators';
 
+@Public()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -30,6 +35,11 @@ export class AuthController {
     return await this.authService.loginUser(req.user);
   }
 
+  @Post('logout/:id')
+  async logoutUser(@Param('id', ParseIntPipe) id: number) {
+    return await this.authService.logoutUser(id);
+  }
+
   @UseGuards(GoogleAuthGuard)
   @Get('google/login')
   googleLogin() {}
@@ -42,7 +52,7 @@ export class AuthController {
   ) {
     const session = await this.authService.loginUser(req.user);
     res.redirect(
-      `${process.env.ClIENT_URL}/api/google?accessToken=${session.accessToken}&refreshToken=${session.refreshToken}&userId=${req.user.id}&name=${req.user.name}&email=${req.user.email}`,
+      `${process.env.ClIENT_URL}/api/google?accessToken=${session.accessToken}&refreshToken=${session.refreshToken}&userId=${req.user.id}&name=${req.user.name}&email=${req.user.email}&role=${req.user.role}`,
     );
   }
 }

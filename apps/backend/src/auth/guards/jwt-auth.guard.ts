@@ -5,18 +5,35 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { Session } from '@repo/shared-types';
 import { Request } from 'express';
+import { IS_PUBLIC } from '../auth.decorators';
 
 @Injectable()
 export class JWTAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly authService: AuthService) {
+  constructor(
+    private reflector: Reflector,
+    private readonly authService: AuthService,
+  ) {
     super();
   }
 
+  // bypass the JWT Guard for public routes
+  // this is because I used the global authentication system
+  canActivate(context: ExecutionContext) {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+    return super.canActivate(context);
+  }
+
   // this function is called when the JWT Guard errors out.
-  handleRequest(err: any, user: any, info: any, ctx: ExecutionContext) {
+  // @ts-ignore
+  async handleRequest(err: any, user: any, info: any, ctx: ExecutionContext) {
     const request = ctx.switchToHttp().getRequest<Request>();
 
     if (err || !user) {
@@ -24,13 +41,16 @@ export class JWTAuthGuard extends AuthGuard('jwt') {
       // so we need to refresh the access token and set it in the request headers.
       if (info?.name === 'TokenExpiredError') {
         const session = request?.headers?.['x-app-session'] as string;
-        const parsedSession = !!session ? JSON.parse(session) : null;
+        const parsedSession: Session | null = !!session
+          ? JSON.parse(session)
+          : null;
 
         if (!parsedSession.refreshToken)
           throw new UnauthorizedException('Authentication failed');
 
         try {
-          const newAccessToken = this.authService.refreshAccessToken(
+          const newAccessToken = await this.authService.refreshAccessToken(
+            parsedSession.user.id,
             parsedSession.refreshToken,
           );
 

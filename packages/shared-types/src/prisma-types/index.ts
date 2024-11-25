@@ -10,6 +10,7 @@ export function getUserDataSelect(
     email: true,
     role: true,
     createdAt: true,
+    hashedRefreshToken: true,
     ...(withPassword && { password: true }),
   } satisfies Prisma.UserSelect;
 }
